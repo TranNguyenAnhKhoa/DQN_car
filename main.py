@@ -6,23 +6,21 @@ from collections import deque
 import random, math
 import matplotlib.pyplot as plt
 
-TOTAL_GAMETIME = 1000  # Max game time for one episode
-N_EPISODES = 6000
-REPLACE_TARGET = 50
+TOTAL_GAMETIME = 1000 # Max game time for one episode
+N_EPISODES = 10000
 
 game = GameEnv.RacingEnv()
 game.fps = 60
 
-GameTime = 0
+GameTime = 0 
 GameHistory = []
 renderFlag = False
 
-ddqn_agent = DDQNAgent(alpha=0.0005, gamma=0.99, n_actions=5, epsilon=1.00, epsilon_end=0.10, epsilon_dec=0.9995,
-                       replace_target=REPLACE_TARGET, batch_size=1024, input_dims=19)
+ddqn_agent = DDQNAgent(alpha=0.0005, gamma=0.99, n_actions=5, epsilon=1.00, batch_size=512, input_dims=19)
 
 # if you want to load the existing model uncomment this line.
 # careful an existing model might be overwritten
-# ddqn_agent.load_model()
+#ddqn_agent.load_model()
 
 ddqn_scores = []
 eps_history = []
@@ -46,7 +44,7 @@ def run():
 
 
 
-        renderFlag = False
+        renderFlag = True
 
         while not done:
 
@@ -89,11 +87,7 @@ def run():
             avg_steps_history.append(avg_steps)
 
 
-
-        if e % REPLACE_TARGET == 0 and e > REPLACE_TARGET:
-            ddqn_agent.update_network_parameters()
-
-        if e % 100 == 0 and e > 10:
+        if e % 10 == 0 and e > 10:
             ddqn_agent.save_model()
             print("save model")
 

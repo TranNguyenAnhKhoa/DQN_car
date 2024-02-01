@@ -1,104 +1,6 @@
-# import random , numpy,math
-# import tensorflow as tf
-#
-# class Brain:
-#     def __int__(self,NbrStates,NbrActions):
-#         self.NbrStates = NbrStates
-#         self.NbrActions = NbrActions
-#         self.model = self.createModel()
-#
-#     def createModel(self):
-#         model = tf.keras.Sequential()
-#         model.add(tf.keras.layers.Dense(128,activation=tf.nn.relu))
-#         model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
-#         model.add(tf.keras.layers.Dense(self.NbrActions, activation=tf.nn.softmax))
-#         model.compile(loss="mse",optimizer="adam")
-#         return model
-#
-#     def train(self,x,y,epoch,verbose = 0):
-#         self.model.fit(x,y,batch_size = 64,epochs = epoch,verbose= verbose)
-#
-#     def predict(self,s):
-#         return self.model.predict(s)
-#
-#     def predictOne(self,s):
-#         return self.model.predict(tf.reshape(s,[1,self.NbrStates])).flatten()
-#
-# class ExpReplay:
-#     samples =[]
-#     def __int__(self,capacity):
-#         self.capacity = capacity
-#     def add(self,sample):
-#         self.samples.append(sample)
-#         if len(self.samples) > self.capacity:
-#             self.samples.pop(0)
-#
-#     def sample(self,n):
-#         n = min(n,len(self.samples))
-#         return random.sample(self.samples,n)
-#
-# #-----------------------------------------------------
-# ExpReplay_CAPACITY = 2000000
-# OBSERVERPERIOD = 750
-# BATCH_SIZE = 1024
-# GAMMA = 0.95
-# MAX_EPSILON = 1
-# MIN_EPSILON = 0.05
-# LAMDA = 0.0005
-# #------------------------------------------------------
-# class Agent:
-#     def __init__(self,NbrStates,NbrActions):
-#         self.NbrStates = NbrStates
-#         self.NbrActions = NbrActions
-#         self.brain = Brain(NbrStates,NbrActions)
-#         self.ExReplay = ExpReplay(ExpReplay_CAPACITY)
-#         self.steps = 0
-#         self.epsilon = MAX_EPSILON
-#
-#     def Act(self,s):
-#         if(random.random() < self.epsilon or self.steps < OBSERVERPERIOD):
-#             return random.randint(0,self.NbrActions-1)
-#         else:
-#             return numpy.argmax(self.brain.predictOne(s))
-#
-#     def CaptureSample(self,sample):
-#         self.ExReplay.add(sample)
-#         self.steps +=1
-#         if(self.steps > OBSERVERPERIOD):
-#             self.epsilon = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * math.exp(-LAMDA * (self.steps - OBSERVERPERIOD))
-#
-#     def Process(self):
-#         batch = self.ExReplay.sample(BATCH_SIZE)
-#         batchlen = len(batch)
-#         no_state = numpy.zeros(self.NbrStates)
-#         states = numpy.array([batchitem[0]] for batchitem in batch)
-#         states_ = numpy.array([(no_state if batchitem[3] is None else batchitem[3])for batchitem in batch])
-#         predictedQ  = self.brain.predict(states)
-#         predictedNextQ = self.brainn.predict(states_)
-#
-#         x = numpy.zeros(batchlen,self.NbrActions)
-#         y = numpy.zeros(batchlen,self.NbrStates)
-#         for i in range(batchlen):
-#             batchitem = batch[i]
-#             state = batchitem[0]
-#             a = batchitem[1]
-#             reward = batchitem[2]
-#             nextstate = batchitem[3]
-#             targetQ = predictedQ[i]
-#             if nextstate is None:
-#                 targetQ[a] = reward
-#             else:
-#                 targetQ[a] = reward + GAMMA *numpy.amax(predictedNextQ[i])
-#
-#             x[i] = state
-#             y[i] = state
-#
-#             self.brain.train((x,y))
-
-
-
-from keras.models import  load_model
-
+from keras.layers import Dense, Activation
+from keras.models import Sequential, load_model
+from keras.optimizers import Adam
 import numpy as np
 import tensorflow as tf
 
@@ -143,10 +45,19 @@ class ReplayBuffer(object):
         return states, actions, rewards, states_, terminal
 
 
+def build_dqn(lr, n_action):
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))  # prev 256
+    model.add(tf.keras.layers.Dense(n_action, activation=tf.nn.softmax))
+    model.compile(loss="mse", optimizer=Adam(lr=lr))
+
+    return model
+
+
 class DDQNAgent(object):
     def __init__(self, alpha, gamma, n_actions, epsilon, batch_size,
-                 input_dims, epsilon_dec=0.999995, epsilon_end=0.10,
-                 mem_size=25000, fname='ddqn_model.h5', replace_target=25):
+                 input_dims, epsilon_dec=0.9996, epsilon_end=0.01,
+                 mem_size=25000000, fname='ddqn_model.h5', replace_target=100):
         self.action_space = [i for i in range(n_actions)]
         self.n_actions = n_actions
         self.gamma = gamma
@@ -158,15 +69,13 @@ class DDQNAgent(object):
         self.replace_target = replace_target
         self.memory = ReplayBuffer(mem_size, input_dims, n_actions, discrete=True)
 
-        self.brain_eval = Brain(input_dims, n_actions, batch_size)
-        self.brain_target = Brain(input_dims, n_actions, batch_size)
+        self.brain_eval = build_dqn(alpha, n_actions)
+        self.brain_target = build_dqn(alpha, n_actions)
 
     def remember(self, state, action, reward, new_state, done):
         self.memory.store_transition(state, action, reward, new_state, done)
 
     def choose_action(self, state):
-
-        state = np.array(state)
         state = state[np.newaxis, :]
 
         rand = np.random.random()
@@ -195,52 +104,55 @@ class DDQNAgent(object):
 
             batch_index = np.arange(self.batch_size, dtype=np.int32)
 
-            q_target[batch_index, action_indices] = reward + self.gamma * q_next[batch_index, max_actions.astype(int)] * done
+            q_target[batch_index, action_indices] = reward + self.gamma * q_next[
+                batch_index, max_actions.astype(int)] * done
 
-            self.brain_eval.train(state, q_target)
+            _ = self.brain_eval.fit(state, q_target, verbose=0)
 
             self.epsilon = self.epsilon * self.epsilon_dec if self.epsilon > self.epsilon_min else self.epsilon_min
+            if self.memory.mem_cntr % self.replace_target == 0:
+                self.update_network_parameters()
 
     def update_network_parameters(self):
-        self.brain_target.copy_weights(self.brain_eval)
+        self.brain_target.set_weights(self.brain_eval.get_weights())
 
     def save_model(self):
-        self.brain_eval.model.save(self.model_file)
+        self.brain_eval.save(self.model_file)
 
     def load_model(self):
         self.brain_eval.model = load_model(self.model_file)
-        self.brain_target.model = load_model(self.model_file)
+        # self.brain_target.model = load_model(self.model_file)
 
-        if self.epsilon == 0.0:
+        if self.epsilon <= self.epsilon_min:
             self.update_network_parameters()
 
-
-class Brain:
-    def __init__(self, NbrStates, NbrActions, batch_size=512):
-        self.NbrStates = NbrStates
-        self.NbrActions = NbrActions
-        self.batch_size = batch_size
-        self.model = self.createModel()
-
-    def createModel(self):
-        model = tf.keras.Sequential()
-        model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))  # prev 256
-        model.add(tf.keras.layers.Dense(self.NbrActions, activation=tf.nn.softmax))
-        model.compile(loss="mse", optimizer="adam")
-
-        return model
-
-    def train(self, x, y, epoch=1, verbose=0):
-        self.model.fit(x, y, batch_size=self.batch_size, verbose=verbose)
-
-    def predict(self, s):
-        return self.model.predict(s)
-
-    def predictOne(self, s):
-        return self.model.predict(tf.reshape(s, [1, self.NbrStates])).flatten()
-
-    def copy_weights(self, TrainNet):
-        variables1 = self.model.trainable_variables
-        variables2 = TrainNet.model.trainable_variables
-        for v1, v2 in zip(variables1, variables2):
-            v1.assign(v2.numpy())
+# class Brain:
+#     def __init__(self, NbrStates, NbrActions, batch_size = 256):
+#         self.NbrStates = NbrStates
+#         self.NbrActions = NbrActions
+#         self.batch_size = batch_size
+#         self.model = self.createModel()
+#
+#
+#     def createModel(self):
+#         model = tf.keras.Sequential()
+#         model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu)) #prev 256
+#         model.add(tf.keras.layers.Dense(self.NbrActions, activation=tf.nn.softmax))
+#         model.compile(loss = "mse", optimizer="adam")
+#
+#         return model
+#
+#     def train(self, x, y, epoch = 1, verbose = 0):
+#         self.model.fit(x, y, batch_size = self.batch_size , verbose = verbose)
+#
+#     def predict(self, s):
+#         return self.model.predict(s)
+#
+#     def predictOne(self, s):
+#         return self.model.predict(tf.reshape(s, [1, self.NbrStates])).flatten()
+#
+#     def copy_weights(self, TrainNet):
+#         variables1 = self.model.trainable_variables
+#         variables2 = TrainNet.model.trainable_variables
+#         for v1, v2 in zip(variables1, variables2):
+#             v1.assign(v2.numpy())

@@ -9,7 +9,7 @@ class Goal:
 
         self.isactiv = False
     
-    def draw(self, win): #(0,255,0) green , (255,0,0) red
+    def draw(self, win):
         pygame.draw.line(win, (0,255,0), (self.x1, self.y1), (self.x2, self.y2), 2)
         if self.isactiv:
             pygame.draw.line(win, (255,0,0), (self.x1, self.y1), (self.x2, self.y2), 2)
