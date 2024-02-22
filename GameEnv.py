@@ -97,7 +97,7 @@ class Car:
         self.vel = 0
         self.velX = 0
         self.velY = 0
-        self.maxvel = 15 # before 15
+        self.maxvel = 12 # before 12
 
         self.angle = math.radians(180)
         self.soll_angle = self.angle
@@ -346,8 +346,8 @@ class Car:
 
     def reset(self):
 
-        self.x = 50
-        self.y = 300
+        self.x = 86
+        self.y = 288
         self.velX = 0
         self.velY = 0
         self.vel = 0
@@ -396,7 +396,7 @@ class RacingEnv:
     def reset(self):
         self.screen.fill((0, 0, 0))
 
-        self.car = Car(50, 300)
+        self.car = Car(86, 288)
         self.walls = getWalls()
         self.goals = getGoals()
         self.game_reward = 0
@@ -437,9 +437,9 @@ class RacingEnv:
 
     def render(self, action):
 
-        DRAW_WALLS = False
-        DRAW_GOALS = False
-        DRAW_RAYS = False
+        DRAW_WALLS = True
+        DRAW_GOALS = True
+        DRAW_RAYS = True
 
         pygame.time.delay(10)
 
@@ -475,31 +475,31 @@ class RacingEnv:
                     pygame.draw.line(self.screen, (255,255,255), (self.car.p2.x, self.car.p2.y), (pt.x, pt.y), 1)
 
         #render controll
-        pygame.draw.rect(self.screen,(255,255,255),(800, 100, 40, 40),2)
-        pygame.draw.rect(self.screen,(255,255,255),(850, 100, 40, 40),2)
-        pygame.draw.rect(self.screen,(255,255,255),(900, 100, 40, 40),2)
-        pygame.draw.rect(self.screen,(255,255,255),(850, 50, 40, 40),2)
+        # pygame.draw.rect(self.screen,(255,255,255),(800, 100, 40, 40),2)
+        # pygame.draw.rect(self.screen,(255,255,255),(850, 100, 40, 40),2)
+        # pygame.draw.rect(self.screen,(255,255,255),(900, 100, 40, 40),2)
+        # pygame.draw.rect(self.screen,(255,255,255),(850, 50, 40, 40),2)
 
-        if action == 4:
-            pygame.draw.rect(self.screen,(0,255,0),(850, 50, 40, 40)) 
-        elif action == 6:
-            pygame.draw.rect(self.screen,(0,255,0),(850, 50, 40, 40))
-            pygame.draw.rect(self.screen,(0,255,0),(800, 100, 40, 40))
-        elif action == 5:
-            pygame.draw.rect(self.screen,(0,255,0),(850, 50, 40, 40))
-            pygame.draw.rect(self.screen,(0,255,0),(900, 100, 40, 40))
-        elif action == 1:
-            pygame.draw.rect(self.screen,(0,255,0),(850, 100, 40, 40)) 
-        elif action == 8:
-            pygame.draw.rect(self.screen,(0,255,0),(850, 100, 40, 40))
-            pygame.draw.rect(self.screen,(0,255,0),(800, 100, 40, 40))
-        elif action == 7:
-            pygame.draw.rect(self.screen,(0,255,0),(850, 100, 40, 40))
-            pygame.draw.rect(self.screen,(0,255,0),(900, 100, 40, 40))
-        elif action == 2:
-            pygame.draw.rect(self.screen,(0,255,0),(800, 100, 40, 40))
-        elif action == 3:
-            pygame.draw.rect(self.screen,(0,255,0),(900, 100, 40, 40))
+        # if action == 4:
+        #     pygame.draw.rect(self.screen,(0,255,0),(850, 50, 40, 40))
+        # elif action == 6:
+        #     pygame.draw.rect(self.screen,(0,255,0),(850, 50, 40, 40))
+        #     pygame.draw.rect(self.screen,(0,255,0),(800, 100, 40, 40))
+        # elif action == 5:
+        #     pygame.draw.rect(self.screen,(0,255,0),(850, 50, 40, 40))
+        #     pygame.draw.rect(self.screen,(0,255,0),(900, 100, 40, 40))
+        # elif action == 1:
+        #     pygame.draw.rect(self.screen,(0,255,0),(850, 100, 40, 40))
+        # elif action == 8:
+        #     pygame.draw.rect(self.screen,(0,255,0),(850, 100, 40, 40))
+        #     pygame.draw.rect(self.screen,(0,255,0),(800, 100, 40, 40))
+        # elif action == 7:
+        #     pygame.draw.rect(self.screen,(0,255,0),(850, 100, 40, 40))
+        #     pygame.draw.rect(self.screen,(0,255,0),(900, 100, 40, 40))
+        # elif action == 2:
+        #     pygame.draw.rect(self.screen,(0,255,0),(800, 100, 40, 40))
+        # elif action == 3:
+        #     pygame.draw.rect(self.screen,(0,255,0),(900, 100, 40, 40))
 
         # score
         text_surface = self.font.render(f'Points {self.car.points}', True, pygame.Color('green'))
